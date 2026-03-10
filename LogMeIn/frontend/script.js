@@ -1,6 +1,7 @@
 // Configuration
-const API_BASE_URL =
-  window.location.hostname === "localhost" ? "http://localhost:5000" : "";
+
+const API_BASE_URL = 'http://localhost:5000'; 
+// (ou const baseUrl = 'http://localhost:5000'; selon comment les devs l'ont nommée)
 
 // État global
 let allLogs = [];

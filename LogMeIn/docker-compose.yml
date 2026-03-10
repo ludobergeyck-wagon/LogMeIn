@@ -1,0 +1,64 @@
+
+
+services:
+  # 1. Le service Base de Données (PostgreSQL)
+  db:
+    image: postgres:15
+    container_name: logs_db
+    environment:
+      POSTGRES_DB: logs_db
+      POSTGRES_USER: logs_user
+      POSTGRES_PASSWORD: logs_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app_network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logs_user -d logs_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Le service Backend (Python/Flask)
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: logs_backend
+    environment:
+      DB_HOST: db
+      DB_NAME: logs_db
+      DB_USER: logs_user
+      DB_PASSWORD: logs_password
+      DB_PORT: 5432
+    ports:
+      - "5000:5000"
+    networks:
+      - app_network
+    depends_on:
+      db:
+        condition: service_healthy # Le backend attend que la base soit prête !
+
+  # 3. Le service Frontend (HTML/JS + Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: logs_frontend
+    ports:
+      - "3000:80" # On expose sur le 3000 pour ton navigateur, Nginx écoute sur le 80
+    networks:
+      - app_network
+    depends_on:
+      - backend
+
+# Création d'un réseau privé pour que les conteneurs communiquent entre eux
+networks:
+  app_network:
+    driver: bridge
+
+# Création d'un volume pour sauvegarder les données de la base
+volumes:
+  pgdata:
